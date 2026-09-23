@@ -140,7 +140,7 @@
 
 
         /* =========================================
-           ANOMALY TABLE
+           TABLES
         ========================================= */
 
         table {
@@ -180,6 +180,139 @@
 
 
         /* =========================================
+           KUBERNETES SUMMARY
+        ========================================= */
+
+        .k8s-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .k8s-box {
+            background: #f4f6f8;
+            padding: 18px;
+            border-radius: 8px;
+        }
+
+        .k8s-box h4 {
+            margin: 0 0 8px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .k8s-value {
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .k8s-connected {
+            color: green;
+        }
+
+        .k8s-disconnected {
+            color: red;
+        }
+
+
+        /* =========================================
+           TRAFFIC GENERATOR
+        ========================================= */
+
+        .traffic-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        select,
+        input[type="range"] {
+            width: 100%;
+        }
+
+        select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .rate-value {
+            font-weight: bold;
+        }
+
+        .traffic-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 11px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .start-button {
+            background: #222;
+            color: white;
+        }
+
+        .stop-button {
+            background: #ddd;
+            color: #222;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #trafficStatus {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+
+        /* =========================================
+           LOAD BALANCING
+        ========================================= */
+
+        .distribution {
+            margin-top: 20px;
+        }
+
+        .pod-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .pod-name {
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+
+        /* =========================================
            RESPONSIVE
         ========================================= */
 
@@ -190,6 +323,14 @@
             }
 
             .anomaly-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .k8s-summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .traffic-controls {
                 grid-template-columns: 1fr;
             }
         }
@@ -204,6 +345,14 @@
             .cards {
                 grid-template-columns: 1fr;
             }
+
+            .k8s-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .pod-row {
+                grid-template-columns: 1fr;
+            }
         }
 
     </style>
@@ -212,7 +361,6 @@
 
 
 <body>
-
 
     <!-- =========================================
          HEADER
@@ -232,67 +380,28 @@
     <div class="cards">
 
         <div class="card">
-
             <h3>Total Requests</h3>
-
-            <div
-                class="value"
-                id="total">
-                -
-            </div>
-
+            <div class="value" id="total">-</div>
         </div>
 
-
         <div class="card">
-
             <h3>Successful Requests</h3>
-
-            <div
-                class="value"
-                id="success">
-                -
-            </div>
-
+            <div class="value" id="success">-</div>
         </div>
 
-
         <div class="card">
-
             <h3>Failed Requests</h3>
-
-            <div
-                class="value"
-                id="failed">
-                -
-            </div>
-
+            <div class="value" id="failed">-</div>
         </div>
 
-
         <div class="card">
-
             <h3>Error Rate</h3>
-
-            <div
-                class="value"
-                id="error">
-                -
-            </div>
-
+            <div class="value" id="error">-</div>
         </div>
 
-
         <div class="card">
-
             <h3>Average Latency</h3>
-
-            <div
-                class="value"
-                id="latency">
-                -
-            </div>
-
+            <div class="value" id="latency">-</div>
         </div>
 
     </div>
@@ -306,13 +415,245 @@
 
         <h2>System Status</h2>
 
-        <p
-            id="status"
+        <p id="status" class="loading">
+            Loading...
+        </p>
+
+    </div>
+
+
+    <!-- =========================================
+         KUBERNETES STATUS
+    ========================================== -->
+
+    <div class="section">
+
+        <h2>☸️ Kubernetes Status</h2>
+
+        <p id="k8sConnection" class="loading">
+            Connecting to Kubernetes...
+        </p>
+
+
+        <div class="k8s-summary">
+
+            <div class="k8s-box">
+
+                <h4>Desired Replicas</h4>
+
+                <div
+                    id="desiredReplicas"
+                    class="k8s-value">
+                    -
+                </div>
+
+            </div>
+
+
+            <div class="k8s-box">
+
+                <h4>Ready Replicas</h4>
+
+                <div
+                    id="readyReplicas"
+                    class="k8s-value">
+                    -
+                </div>
+
+            </div>
+
+
+            <div class="k8s-box">
+
+                <h4>Available Replicas</h4>
+
+                <div
+                    id="availableReplicas"
+                    class="k8s-value">
+                    -
+                </div>
+
+            </div>
+
+
+            <div class="k8s-box">
+
+                <h4>Service Endpoints</h4>
+
+                <div
+                    id="serviceEndpoints"
+                    class="k8s-value">
+                    -
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <h3>API Pods</h3>
+
+
+        <table id="podsTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Pod Name</th>
+
+                    <th>Status</th>
+
+                    <th>Ready</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- =========================================
+         TRAFFIC GENERATOR
+    ========================================== -->
+
+    <div class="section">
+
+        <h2>🚦 Traffic Generator</h2>
+
+        <p>
+            Generate controlled application traffic for testing
+            monitoring, Kubernetes load balancing, and anomaly detection.
+        </p>
+
+
+        <div class="traffic-controls">
+
+            <div class="control-group">
+
+                <label for="endpointSelect">
+                    Endpoint
+                </label>
+
+                <select id="endpointSelect">
+
+                    <option value="/health">
+                        /health
+                    </option>
+
+                    <option value="/instance">
+                        /instance
+                    </option>
+
+                    <option value="/slow">
+                        /slow
+                    </option>
+
+                    <option value="/error">
+                        /error
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="control-group">
+
+                <label for="rateSlider">
+                    Requests per second:
+                    <span
+                        id="rateValue"
+                        class="rate-value">
+                        1
+                    </span>
+                </label>
+
+                <input
+                    type="range"
+                    id="rateSlider"
+                    min="1"
+                    max="50"
+                    value="1">
+
+            </div>
+
+        </div>
+
+
+        <div class="traffic-buttons">
+
+            <button
+                id="startTraffic"
+                class="start-button">
+
+                Start Traffic
+
+            </button>
+
+
+            <button
+                id="stopTraffic"
+                class="stop-button"
+                disabled>
+
+                Stop Traffic
+
+            </button>
+
+        </div>
+
+
+        <div
+            id="trafficStatus"
             class="loading">
 
-            Loading...
+            Traffic generator stopped.
 
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         LOAD BALANCING
+    ========================================== -->
+
+    <div class="section">
+
+        <h2>⚖️ Kubernetes Load Balancing</h2>
+
+        <p>
+            Requests sent to <code>/instance</code> are distributed
+            across the available API pods by the Kubernetes Service.
         </p>
+
+
+        <div class="distribution">
+
+            <div class="pod-row">
+
+                <strong>Pod</strong>
+
+                <strong>Status</strong>
+
+                <strong>Requests</strong>
+
+            </div>
+
+
+            <div id="distributionRows">
+
+            </div>
+
+        </div>
 
     </div>
 
@@ -335,10 +676,7 @@
         </div>
 
 
-        <!-- ML SUMMARY -->
-
         <div class="anomaly-summary">
-
 
             <div class="anomaly-box">
 
@@ -393,8 +731,6 @@
         </div>
 
 
-        <!-- ML RESULTS -->
-
         <h3>
             Latest Detection Windows
         </h3>
@@ -406,29 +742,17 @@
 
                 <tr>
 
-                    <th>
-                        Time
-                    </th>
+                    <th>Time</th>
 
-                    <th>
-                        Requests / Min
-                    </th>
+                    <th>Requests / Min</th>
 
-                    <th>
-                        Avg Latency
-                    </th>
+                    <th>Avg Latency</th>
 
-                    <th>
-                        Error Rate
-                    </th>
+                    <th>Error Rate</th>
 
-                    <th>
-                        Anomaly Score
-                    </th>
+                    <th>Anomaly Score</th>
 
-                    <th>
-                        Status
-                    </th>
+                    <th>Status</th>
 
                 </tr>
 
@@ -461,21 +785,13 @@
 
                 <tr>
 
-                    <th>
-                        Time
-                    </th>
+                    <th>Time</th>
 
-                    <th>
-                        Endpoint
-                    </th>
+                    <th>Endpoint</th>
 
-                    <th>
-                        Status
-                    </th>
+                    <th>Status</th>
 
-                    <th>
-                        Latency
-                    </th>
+                    <th>Latency</th>
 
                 </tr>
 
@@ -497,6 +813,15 @@
 
     <script>
 
+        // ==================================================
+        // TRAFFIC GENERATOR STATE
+        // ==================================================
+
+        let trafficRunning = false;
+        let trafficTimer = null;
+
+        const podRequestCounts = {};
+
 
         // ==================================================
         // LOAD NORMAL APPLICATION METRICS
@@ -506,84 +831,52 @@
 
             try {
 
-                const response = await fetch(
-                    "http://3.80.101.201:30001/metrics"
-                );
-
+                const response = await fetch("/metrics");
 
                 if (!response.ok) {
-
-                    throw new Error(
-                        "Failed to fetch metrics"
-                    );
-
+                    throw new Error("Failed to fetch metrics");
                 }
 
+                const data = await response.json();
 
-                const data =
-                    await response.json();
-
-
-                // ------------------------------------------
-                // Update metric cards
-                // ------------------------------------------
 
                 document.getElementById("total").innerText =
                     data.total_requests;
 
-
                 document.getElementById("success").innerText =
                     data.successful_requests;
-
 
                 document.getElementById("failed").innerText =
                     data.failed_requests;
 
-
                 document.getElementById("error").innerText =
                     data.error_rate_percent + "%";
-
 
                 document.getElementById("latency").innerText =
                     data.average_latency_seconds + " s";
 
 
-                // ------------------------------------------
-                // Update system status
-                // ------------------------------------------
-
                 const statusElement =
                     document.getElementById("status");
 
 
-                if (
-                    data.error_rate_percent > 5
-                ) {
+                if (data.error_rate_percent > 5) {
 
                     statusElement.innerText =
                         "⚠️ System experiencing errors";
 
-
                     statusElement.className =
                         "error";
 
-                }
-
-                else {
+                } else {
 
                     statusElement.innerText =
                         "✅ System healthy";
 
-
                     statusElement.className =
                         "success";
-
                 }
 
-
-                // ------------------------------------------
-                // Recent requests table
-                // ------------------------------------------
 
                 const tableBody =
                     document.querySelector(
@@ -594,56 +887,69 @@
                 tableBody.innerHTML = "";
 
 
-                data.recent_requests.forEach(
-                    request => {
+                if (
+                    data.recent_requests &&
+                    data.recent_requests.length > 0
+                ) {
+
+                    data.recent_requests.forEach(
+                        request => {
+
+                            const row =
+                                document.createElement("tr");
 
 
-                        const row =
-                            document.createElement(
-                                "tr"
-                            );
+                            const time =
+                                new Date(
+                                    request.timestamp
+                                ).toLocaleTimeString();
 
 
-                        const time =
-                            new Date(
-                                request.timestamp
-                            ).toLocaleTimeString();
+                            const statusClass =
+                                request.status_code >= 400
+                                    ? "error"
+                                    : "success";
 
 
-                        const statusClass =
-                            request.status_code >= 400
-                                ? "error"
-                                : "success";
+                            row.innerHTML = `
+
+                                <td>
+                                    ${time}
+                                </td>
+
+                                <td>
+                                    ${request.endpoint}
+                                </td>
+
+                                <td class="${statusClass}">
+                                    ${request.status_code}
+                                </td>
+
+                                <td>
+                                    ${request.latency} s
+                                </td>
+
+                            `;
 
 
-                        row.innerHTML = `
+                            tableBody.appendChild(row);
 
-                            <td>
-                                ${time}
+                        }
+                    );
+
+                } else {
+
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="loading">
+                                No recent requests.
                             </td>
+                        </tr>
+                    `;
 
-                            <td>
-                                ${request.endpoint}
-                            </td>
-
-                            <td class="${statusClass}">
-                                ${request.status_code}
-                            </td>
-
-                            <td>
-                                ${request.latency} s
-                            </td>
-
-                        `;
-
-
-                        tableBody.appendChild(row);
-
-                    }
-                );
+                }
 
             }
-
 
             catch (error) {
 
@@ -670,6 +976,495 @@
 
 
         // ==================================================
+        // LOAD KUBERNETES STATUS
+        // ==================================================
+
+        async function loadKubernetes() {
+
+            try {
+
+                const response =
+                    await fetch("/kubernetes");
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to fetch Kubernetes status"
+                    );
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                const connection =
+                    document.getElementById(
+                        "k8sConnection"
+                    );
+
+
+                if (data.status !== "connected") {
+
+                    throw new Error(
+                        data.message ||
+                        "Kubernetes unavailable"
+                    );
+
+                }
+
+
+                connection.innerText =
+                    "✅ Connected to Kubernetes";
+
+                connection.className =
+                    "k8s-connected";
+
+
+                document.getElementById(
+                    "desiredReplicas"
+                ).innerText =
+                    data.deployment.desired_replicas;
+
+
+                document.getElementById(
+                    "readyReplicas"
+                ).innerText =
+                    data.deployment.ready_replicas;
+
+
+                document.getElementById(
+                    "availableReplicas"
+                ).innerText =
+                    data.deployment.available_replicas;
+
+
+                document.getElementById(
+                    "serviceEndpoints"
+                ).innerText =
+                    data.service.endpoints;
+
+
+                const tableBody =
+                    document.querySelector(
+                        "#podsTable tbody"
+                    );
+
+
+                tableBody.innerHTML = "";
+
+
+                data.pods.forEach(
+                    pod => {
+
+                        const row =
+                            document.createElement("tr");
+
+
+                        const statusClass =
+                            pod.status === "Running"
+                                ? "success"
+                                : "error";
+
+
+                        const readyClass =
+                            pod.ready
+                                ? "success"
+                                : "error";
+
+
+                        row.innerHTML = `
+
+                            <td>
+                                <code>
+                                    ${pod.name}
+                                </code>
+                            </td>
+
+                            <td class="${statusClass}">
+                                ${pod.status}
+                            </td>
+
+                            <td class="${readyClass}">
+                                ${pod.ready ? "Ready" : "Not Ready"}
+                            </td>
+
+                        `;
+
+
+                        tableBody.appendChild(row);
+
+                    }
+                );
+
+
+                // Make sure pod counters exist.
+                data.pods.forEach(
+                    pod => {
+
+                        if (
+                            podRequestCounts[pod.name] === undefined
+                        ) {
+
+                            podRequestCounts[pod.name] = 0;
+
+                        }
+
+                    }
+                );
+
+
+                renderDistribution();
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Error loading Kubernetes status:",
+                    error
+                );
+
+
+                const connection =
+                    document.getElementById(
+                        "k8sConnection"
+                    );
+
+
+                connection.innerText =
+                    "❌ Kubernetes status unavailable";
+
+                connection.className =
+                    "k8s-disconnected";
+
+            }
+
+        }
+
+
+        // ==================================================
+        // RENDER LOAD BALANCING DISTRIBUTION
+        // ==================================================
+
+        function renderDistribution() {
+
+            const container =
+                document.getElementById(
+                    "distributionRows"
+                );
+
+
+            container.innerHTML = "";
+
+
+            const podNames =
+                Object.keys(
+                    podRequestCounts
+                );
+
+
+            if (podNames.length === 0) {
+
+                container.innerHTML = `
+                    <div class="loading">
+                        Waiting for pod information...
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            podNames.forEach(
+                podName => {
+
+                    const row =
+                        document.createElement("div");
+
+
+                    row.className =
+                        "pod-row";
+
+
+                    row.innerHTML = `
+
+                        <span class="pod-name">
+                            ${podName}
+                        </span>
+
+                        <span class="success">
+                            Active
+                        </span>
+
+                        <strong>
+                            ${podRequestCounts[podName]}
+                        </strong>
+
+                    `;
+
+
+                    container.appendChild(row);
+
+                }
+            );
+
+        }
+
+
+        // ==================================================
+        // SEND ONE CONTROLLED REQUEST
+        // ==================================================
+
+        async function sendTrafficRequest() {
+
+            if (!trafficRunning) {
+                return;
+            }
+
+
+            const endpoint =
+                document.getElementById(
+                    "endpointSelect"
+                ).value;
+
+
+            const startTime =
+                performance.now();
+
+
+            try {
+
+                const response =
+                    await fetch(endpoint);
+
+
+                const latency =
+                    (
+                        performance.now() -
+                        startTime
+                    ) / 1000;
+
+
+                document.getElementById(
+                    "trafficStatus"
+                ).innerText =
+                    `Traffic running: ${endpoint} → ${response.status} (${latency.toFixed(3)} s)`;
+
+
+                // /instance returns the actual pod name.
+                if (endpoint === "/instance") {
+
+                    try {
+
+                        const data =
+                            await response.json();
+
+
+                        if (data.instance) {
+
+                            if (
+                                podRequestCounts[data.instance] === undefined
+                            ) {
+
+                                podRequestCounts[data.instance] = 0;
+
+                            }
+
+
+                            podRequestCounts[data.instance]++;
+
+                            renderDistribution();
+
+                        }
+
+                    }
+
+                    catch (jsonError) {
+
+                        console.error(
+                            "Unable to read instance:",
+                            jsonError
+                        );
+
+                    }
+
+                }
+
+            }
+
+            catch (error) {
+
+                document.getElementById(
+                    "trafficStatus"
+                ).innerText =
+                    "❌ Traffic request failed";
+
+            }
+
+        }
+
+
+        // ==================================================
+        // START TRAFFIC
+        // ==================================================
+
+        function startTraffic() {
+
+            if (trafficRunning) {
+                return;
+            }
+
+
+            trafficRunning = true;
+
+
+            document.getElementById(
+                "startTraffic"
+            ).disabled = true;
+
+
+            document.getElementById(
+                "stopTraffic"
+            ).disabled = false;
+
+
+            const rate =
+                Number(
+                    document.getElementById(
+                        "rateSlider"
+                    ).value
+                );
+
+
+            const interval =
+                1000 / rate;
+
+
+            document.getElementById(
+                "trafficStatus"
+            ).innerText =
+                "Traffic generator running.";
+
+
+            // Send immediately.
+            sendTrafficRequest();
+
+
+            trafficTimer =
+                setInterval(
+                    sendTrafficRequest,
+                    interval
+                );
+
+        }
+
+
+        // ==================================================
+        // STOP TRAFFIC
+        // ==================================================
+
+        function stopTraffic() {
+
+            trafficRunning = false;
+
+
+            if (trafficTimer) {
+
+                clearInterval(
+                    trafficTimer
+                );
+
+                trafficTimer = null;
+
+            }
+
+
+            document.getElementById(
+                "startTraffic"
+            ).disabled = false;
+
+
+            document.getElementById(
+                "stopTraffic"
+            ).disabled = true;
+
+
+            document.getElementById(
+                "trafficStatus"
+            ).innerText =
+                "Traffic generator stopped.";
+
+        }
+
+
+        // ==================================================
+        // RATE SLIDER
+        // ==================================================
+
+        document.getElementById(
+            "rateSlider"
+        ).addEventListener(
+            "input",
+            function () {
+
+                const rate =
+                    Number(this.value);
+
+
+                document.getElementById(
+                    "rateValue"
+                ).innerText =
+                    rate;
+
+
+                // If traffic is running,
+                // restart the timer using the new rate.
+
+                if (trafficRunning) {
+
+                    clearInterval(
+                        trafficTimer
+                    );
+
+
+                    const interval =
+                        1000 / rate;
+
+
+                    trafficTimer =
+                        setInterval(
+                            sendTrafficRequest,
+                            interval
+                        );
+
+                }
+
+            }
+        );
+
+
+        // ==================================================
+        // BUTTON EVENTS
+        // ==================================================
+
+        document.getElementById(
+            "startTraffic"
+        ).addEventListener(
+            "click",
+            startTraffic
+        );
+
+
+        document.getElementById(
+            "stopTraffic"
+        ).addEventListener(
+            "click",
+            stopTraffic
+        );
+
+
+        // ==================================================
         // LOAD ML ANOMALY DETECTION
         // ==================================================
 
@@ -678,9 +1473,7 @@
             try {
 
                 const response =
-                    await fetch(
-                        "http://3.80.101.201:30001/anomalies"
-                    );
+                    await fetch("/anomalies");
 
 
                 if (!response.ok) {
@@ -696,29 +1489,17 @@
                     await response.json();
 
 
-                // ------------------------------------------
-                // Update anomaly count
-                // ------------------------------------------
-
                 document.getElementById(
                     "anomalyCount"
                 ).innerText =
                     data.anomalies_detected;
 
 
-                // ------------------------------------------
-                // Update windows analyzed
-                // ------------------------------------------
-
                 document.getElementById(
                     "windowsAnalyzed"
                 ).innerText =
                     data.windows_analyzed;
 
-
-                // ------------------------------------------
-                // Update ML status
-                // ------------------------------------------
 
                 const anomalyStatus =
                     document.getElementById(
@@ -732,9 +1513,7 @@
                     );
 
 
-                if (
-                    data.status === "ANOMALY"
-                ) {
+                if (data.status === "ANOMALY") {
 
                     anomalyStatus.innerText =
                         "🚨 Anomaly detected in application behavior";
@@ -753,9 +1532,7 @@
 
                 }
 
-                else if (
-                    data.status === "NORMAL"
-                ) {
+                else if (data.status === "NORMAL") {
 
                     anomalyStatus.innerText =
                         "✅ No abnormal behavior detected";
@@ -787,12 +1564,12 @@
                     mlStatus.innerText =
                         "INSUFFICIENT DATA";
 
+
+                    mlStatus.className =
+                        "anomaly-box-value";
+
                 }
 
-
-                // ------------------------------------------
-                // Update anomaly table
-                // ------------------------------------------
 
                 const tableBody =
                     document.querySelector(
@@ -803,64 +1580,79 @@
                 tableBody.innerHTML = "";
 
 
-                data.results.forEach(
-                    result => {
+                if (
+                    data.results &&
+                    data.results.length > 0
+                ) {
+
+                    data.results.forEach(
+                        result => {
+
+                            const row =
+                                document.createElement(
+                                    "tr"
+                                );
 
 
-                        const row =
-                            document.createElement(
-                                "tr"
-                            );
+                            const time =
+                                new Date(
+                                    result.minute
+                                ).toLocaleTimeString();
 
 
-                        const time =
-                            new Date(
-                                result.minute
-                            ).toLocaleTimeString();
+                            const statusClass =
+                                result.status === "ANOMALY"
+                                    ? "error"
+                                    : "success";
 
 
-                        const statusClass =
-                            result.status === "ANOMALY"
-                                ? "error"
-                                : "success";
+                            row.innerHTML = `
+
+                                <td>
+                                    ${time}
+                                </td>
+
+                                <td>
+                                    ${result.requests_per_minute}
+                                </td>
+
+                                <td>
+                                    ${result.avg_latency} s
+                                </td>
+
+                                <td>
+                                    ${(result.error_rate * 100).toFixed(2)}%
+                                </td>
+
+                                <td>
+                                    ${result.anomaly_score}
+                                </td>
+
+                                <td class="${statusClass}">
+                                    ${result.status}
+                                </td>
+
+                            `;
 
 
-                        row.innerHTML = `
+                            tableBody.appendChild(row);
 
-                            <td>
-                                ${time}
+                        }
+                    );
+
+                } else {
+
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="loading">
+                                No detection windows available.
                             </td>
+                        </tr>
+                    `;
 
-                            <td>
-                                ${result.requests_per_minute}
-                            </td>
-
-                            <td>
-                                ${result.avg_latency} s
-                            </td>
-
-                            <td>
-                                ${(result.error_rate * 100).toFixed(2)}%
-                            </td>
-
-                            <td>
-                                ${result.anomaly_score}
-                            </td>
-
-                            <td class="${statusClass}">
-                                ${result.status}
-                            </td>
-
-                        `;
-
-
-                        tableBody.appendChild(row);
-
-                    }
-                );
+                }
 
             }
-
 
             catch (error) {
 
@@ -894,6 +1686,8 @@
 
         loadAnomalies();
 
+        loadKubernetes();
+
 
         // ==================================================
         // REFRESH EVERY 5 SECONDS
@@ -907,6 +1701,12 @@
 
         setInterval(
             loadAnomalies,
+            5000
+        );
+
+
+        setInterval(
+            loadKubernetes,
             5000
         );
 
