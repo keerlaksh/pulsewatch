@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsewatch-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulsewatch-api
+  template:
+    metadata:
+      labels:
+        app: pulsewatch-api
+    spec:
+      containers:
+        - name: pulsewatch-api
+          image: keerlaksh/pulsewatch:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_HOST
+              value: "pulsewatch-db"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "pulsewatch"
+            - name: DB_USER
+              value: "pulsewatch"
+            - name: DB_PASSWORD
+              value: "pulsewatch"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulsewatch-api
+spec:
+  selector:
+    app: pulsewatch-api
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30001
+  type: NodePort
