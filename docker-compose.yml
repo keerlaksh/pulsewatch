@@ -1,0 +1,41 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: pulsewatch-db
+
+    environment:
+      POSTGRES_USER: pulsewatch
+      POSTGRES_PASSWORD: pulsewatch
+      POSTGRES_DB: pulsewatch
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+  api:
+    build:
+      context: ./backend
+
+    container_name: pulsewatch-api
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pulsewatch
+      DB_USER: pulsewatch
+      DB_PASSWORD: pulsewatch
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      - postgres
+
+
+volumes:
+
+  postgres_data:
