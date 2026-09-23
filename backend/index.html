@@ -1,917 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>PulseWatch Dashboard</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 30px;
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #222;
-        }
-
-        h1 {
-            margin-bottom: 5px;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-        }
-
-        /* =========================================
-           METRIC CARDS
-        ========================================= */
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .card h3 {
-            margin: 0 0 12px;
-            font-size: 15px;
-            color: #666;
-        }
-
-        .value {
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-
-        /* =========================================
-           SECTIONS
-        ========================================= */
-
-        .section {
-            background: white;
-            padding: 25px;
-            margin-bottom: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .section h2 {
-            margin-top: 0;
-        }
-
-
-        /* =========================================
-           SYSTEM STATUS
-        ========================================= */
-
-        #status {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-
-        /* =========================================
-           ML ANOMALY STATUS
-        ========================================= */
-
-        .anomaly-status {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-
-        .anomaly-normal {
-            color: green;
-        }
-
-        .anomaly-warning {
-            color: red;
-        }
-
-        .anomaly-loading {
-            color: #777;
-        }
-
-
-        /* =========================================
-           ML SUMMARY
-        ========================================= */
-
-        .anomaly-summary {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .anomaly-box {
-            background: #f4f6f8;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .anomaly-box h4 {
-            margin: 0 0 8px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .anomaly-box-value {
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-
-        /* =========================================
-           ANOMALY TABLE
-        ========================================= */
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background: #f4f6f8;
-        }
-
-
-        /* =========================================
-           STATUS COLORS
-        ========================================= */
-
-        .success {
-            color: green;
-            font-weight: bold;
-        }
-
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-
-        .loading {
-            color: #777;
-        }
-
-
-        /* =========================================
-           RESPONSIVE
-        ========================================= */
-
-        @media (max-width: 1000px) {
-
-            .cards {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .anomaly-summary {
-                grid-template-columns: 1fr;
-            }
-        }
-
-
-        @media (max-width: 600px) {
-
-            body {
-                padding: 15px;
-            }
-
-            .cards {
-                grid-template-columns: 1fr;
-            }
-        }
-
-    </style>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulseWatch Dashboard</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:30px;font-family:Arial,sans-serif;background:#f4f6f8;color:#222}
+h1{margin-bottom:5px}.subtitle{color:#666;margin-bottom:30px}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:20px;margin-bottom:25px}
+.card,.section{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)}.card{padding:20px}.card h3{margin:0 0 12px;font-size:15px;color:#666}.value{font-size:28px;font-weight:bold}
+.section{padding:25px;margin-bottom:25px}.section h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.box{background:#f4f6f8;padding:15px;border-radius:8px}.box h4{margin:0 0 8px;color:#666;font-size:14px}.box-value{font-size:24px;font-weight:bold}
+table{width:100%;border-collapse:collapse}th,td{padding:12px;text-align:left;border-bottom:1px solid #ddd}th{background:#f4f6f8}
+.success{color:green;font-weight:bold}.error{color:red;font-weight:bold}.loading{color:#777}
+.controls{display:flex;gap:15px;align-items:end;flex-wrap:wrap}.control{display:flex;flex-direction:column;gap:6px}.control select,.control input{padding:10px;border:1px solid #ccc;border-radius:6px}
+button{padding:10px 18px;border:0;border-radius:6px;cursor:pointer;font-weight:bold}#startBtn{background:#1f7a3d;color:white}#stopBtn{background:#b42318;color:white}
+#trafficStatus{margin-top:15px;font-weight:bold}.anomaly-status{font-size:22px;font-weight:bold;margin-bottom:15px}.anomaly-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:20px}
+@media(max-width:1000px){.cards,.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){body{padding:15px}.cards,.grid{grid-template-columns:1fr}}
+</style>
 </head>
-
-
 <body>
-
-
-    <!-- =========================================
-         HEADER
-    ========================================== -->
-
-    <h1>PulseWatch</h1>
-
-    <div class="subtitle">
-        Application Monitoring Dashboard
-    </div>
-
-
-    <!-- =========================================
-         METRIC CARDS
-    ========================================== -->
-
-    <div class="cards">
-
-        <div class="card">
-
-            <h3>Total Requests</h3>
-
-            <div
-                class="value"
-                id="total">
-                -
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <h3>Successful Requests</h3>
-
-            <div
-                class="value"
-                id="success">
-                -
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <h3>Failed Requests</h3>
-
-            <div
-                class="value"
-                id="failed">
-                -
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <h3>Error Rate</h3>
-
-            <div
-                class="value"
-                id="error">
-                -
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <h3>Average Latency</h3>
-
-            <div
-                class="value"
-                id="latency">
-                -
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =========================================
-         SYSTEM STATUS
-    ========================================== -->
-
-    <div class="section">
-
-        <h2>System Status</h2>
-
-        <p
-            id="status"
-            class="loading">
-
-            Loading...
-
-        </p>
-
-    </div>
-
-
-    <!-- =========================================
-         ML ANOMALY DETECTION
-    ========================================== -->
-
-    <div class="section">
-
-        <h2>🤖 ML Anomaly Detection</h2>
-
-
-        <div
-            id="anomalyStatus"
-            class="anomaly-status anomaly-loading">
-
-            Analyzing application behavior...
-
-        </div>
-
-
-        <!-- ML SUMMARY -->
-
-        <div class="anomaly-summary">
-
-
-            <div class="anomaly-box">
-
-                <h4>
-                    Anomalies Detected
-                </h4>
-
-                <div
-                    id="anomalyCount"
-                    class="anomaly-box-value">
-
-                    -
-
-                </div>
-
-            </div>
-
-
-            <div class="anomaly-box">
-
-                <h4>
-                    Windows Analyzed
-                </h4>
-
-                <div
-                    id="windowsAnalyzed"
-                    class="anomaly-box-value">
-
-                    -
-
-                </div>
-
-            </div>
-
-
-            <div class="anomaly-box">
-
-                <h4>
-                    ML Status
-                </h4>
-
-                <div
-                    id="mlStatus"
-                    class="anomaly-box-value">
-
-                    -
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- ML RESULTS -->
-
-        <h3>
-            Latest Detection Windows
-        </h3>
-
-
-        <table id="anomalyTable">
-
-            <thead>
-
-                <tr>
-
-                    <th>
-                        Time
-                    </th>
-
-                    <th>
-                        Requests / Min
-                    </th>
-
-                    <th>
-                        Avg Latency
-                    </th>
-
-                    <th>
-                        Error Rate
-                    </th>
-
-                    <th>
-                        Anomaly Score
-                    </th>
-
-                    <th>
-                        Status
-                    </th>
-
-                </tr>
-
-            </thead>
-
-
-            <tbody>
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-
-    <!-- =========================================
-         RECENT REQUESTS
-    ========================================== -->
-
-    <div class="section">
-
-        <h2>
-            Recent Requests
-        </h2>
-
-
-        <table id="requestsTable">
-
-            <thead>
-
-                <tr>
-
-                    <th>
-                        Time
-                    </th>
-
-                    <th>
-                        Endpoint
-                    </th>
-
-                    <th>
-                        Status
-                    </th>
-
-                    <th>
-                        Latency
-                    </th>
-
-                </tr>
-
-            </thead>
-
-
-            <tbody>
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-
-    <!-- =========================================
-         JAVASCRIPT
-    ========================================== -->
-
-    <script>
-
-
-        // ==================================================
-        // LOAD NORMAL APPLICATION METRICS
-        // ==================================================
-
-        async function loadMetrics() {
-
-            try {
-
-                const response = await fetch(
-                    "http://3.80.101.201:30001/metrics"
-                );
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        "Failed to fetch metrics"
-                    );
-
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                // ------------------------------------------
-                // Update metric cards
-                // ------------------------------------------
-
-                document.getElementById("total").innerText =
-                    data.total_requests;
-
-
-                document.getElementById("success").innerText =
-                    data.successful_requests;
-
-
-                document.getElementById("failed").innerText =
-                    data.failed_requests;
-
-
-                document.getElementById("error").innerText =
-                    data.error_rate_percent + "%";
-
-
-                document.getElementById("latency").innerText =
-                    data.average_latency_seconds + " s";
-
-
-                // ------------------------------------------
-                // Update system status
-                // ------------------------------------------
-
-                const statusElement =
-                    document.getElementById("status");
-
-
-                if (
-                    data.error_rate_percent > 5
-                ) {
-
-                    statusElement.innerText =
-                        "⚠️ System experiencing errors";
-
-
-                    statusElement.className =
-                        "error";
-
-                }
-
-                else {
-
-                    statusElement.innerText =
-                        "✅ System healthy";
-
-
-                    statusElement.className =
-                        "success";
-
-                }
-
-
-                // ------------------------------------------
-                // Recent requests table
-                // ------------------------------------------
-
-                const tableBody =
-                    document.querySelector(
-                        "#requestsTable tbody"
-                    );
-
-
-                tableBody.innerHTML = "";
-
-
-                data.recent_requests.forEach(
-                    request => {
-
-
-                        const row =
-                            document.createElement(
-                                "tr"
-                            );
-
-
-                        const time =
-                            new Date(
-                                request.timestamp
-                            ).toLocaleTimeString();
-
-
-                        const statusClass =
-                            request.status_code >= 400
-                                ? "error"
-                                : "success";
-
-
-                        row.innerHTML = `
-
-                            <td>
-                                ${time}
-                            </td>
-
-                            <td>
-                                ${request.endpoint}
-                            </td>
-
-                            <td class="${statusClass}">
-                                ${request.status_code}
-                            </td>
-
-                            <td>
-                                ${request.latency} s
-                            </td>
-
-                        `;
-
-
-                        tableBody.appendChild(row);
-
-                    }
-                );
-
-            }
-
-
-            catch (error) {
-
-                console.error(
-                    "Error loading metrics:",
-                    error
-                );
-
-
-                document.getElementById(
-                    "status"
-                ).innerText =
-                    "❌ Unable to connect to PulseWatch backend";
-
-
-                document.getElementById(
-                    "status"
-                ).className =
-                    "error";
-
-            }
-
-        }
-
-
-        // ==================================================
-        // LOAD ML ANOMALY DETECTION
-        // ==================================================
-
-        async function loadAnomalies() {
-
-            try {
-
-                const response =
-                    await fetch(
-                        "http://3.80.101.201:30001/anomalies"
-                    );
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        "Failed to fetch anomaly data"
-                    );
-
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                // ------------------------------------------
-                // Update anomaly count
-                // ------------------------------------------
-
-                document.getElementById(
-                    "anomalyCount"
-                ).innerText =
-                    data.anomalies_detected;
-
-
-                // ------------------------------------------
-                // Update windows analyzed
-                // ------------------------------------------
-
-                document.getElementById(
-                    "windowsAnalyzed"
-                ).innerText =
-                    data.windows_analyzed;
-
-
-                // ------------------------------------------
-                // Update ML status
-                // ------------------------------------------
-
-                const anomalyStatus =
-                    document.getElementById(
-                        "anomalyStatus"
-                    );
-
-
-                const mlStatus =
-                    document.getElementById(
-                        "mlStatus"
-                    );
-
-
-                if (
-                    data.status === "ANOMALY"
-                ) {
-
-                    anomalyStatus.innerText =
-                        "🚨 Anomaly detected in application behavior";
-
-
-                    anomalyStatus.className =
-                        "anomaly-status anomaly-warning";
-
-
-                    mlStatus.innerText =
-                        "ANOMALY";
-
-
-                    mlStatus.className =
-                        "anomaly-box-value error";
-
-                }
-
-                else if (
-                    data.status === "NORMAL"
-                ) {
-
-                    anomalyStatus.innerText =
-                        "✅ No abnormal behavior detected";
-
-
-                    anomalyStatus.className =
-                        "anomaly-status anomaly-normal";
-
-
-                    mlStatus.innerText =
-                        "NORMAL";
-
-
-                    mlStatus.className =
-                        "anomaly-box-value success";
-
-                }
-
-                else {
-
-                    anomalyStatus.innerText =
-                        "⚠️ Not enough data for ML detection";
-
-
-                    anomalyStatus.className =
-                        "anomaly-status anomaly-loading";
-
-
-                    mlStatus.innerText =
-                        "INSUFFICIENT DATA";
-
-                }
-
-
-                // ------------------------------------------
-                // Update anomaly table
-                // ------------------------------------------
-
-                const tableBody =
-                    document.querySelector(
-                        "#anomalyTable tbody"
-                    );
-
-
-                tableBody.innerHTML = "";
-
-
-                data.results.forEach(
-                    result => {
-
-
-                        const row =
-                            document.createElement(
-                                "tr"
-                            );
-
-
-                        const time =
-                            new Date(
-                                result.minute
-                            ).toLocaleTimeString();
-
-
-                        const statusClass =
-                            result.status === "ANOMALY"
-                                ? "error"
-                                : "success";
-
-
-                        row.innerHTML = `
-
-                            <td>
-                                ${time}
-                            </td>
-
-                            <td>
-                                ${result.requests_per_minute}
-                            </td>
-
-                            <td>
-                                ${result.avg_latency} s
-                            </td>
-
-                            <td>
-                                ${(result.error_rate * 100).toFixed(2)}%
-                            </td>
-
-                            <td>
-                                ${result.anomaly_score}
-                            </td>
-
-                            <td class="${statusClass}">
-                                ${result.status}
-                            </td>
-
-                        `;
-
-
-                        tableBody.appendChild(row);
-
-                    }
-                );
-
-            }
-
-
-            catch (error) {
-
-                console.error(
-                    "Error loading anomaly data:",
-                    error
-                );
-
-
-                document.getElementById(
-                    "anomalyStatus"
-                ).innerText =
-                    "❌ Unable to load ML anomaly detection";
-
-
-                document.getElementById(
-                    "anomalyStatus"
-                ).className =
-                    "anomaly-status anomaly-warning";
-
-            }
-
-        }
-
-
-        // ==================================================
-        // INITIAL LOAD
-        // ==================================================
-
-        loadMetrics();
-
-        loadAnomalies();
-
-
-        // ==================================================
-        // REFRESH EVERY 5 SECONDS
-        // ==================================================
-
-        setInterval(
-            loadMetrics,
-            5000
-        );
-
-
-        setInterval(
-            loadAnomalies,
-            5000
-        );
-
-    </script>
-
+<h1>PulseWatch</h1><div class="subtitle">Application Monitoring Dashboard</div>
+
+<div class="cards">
+<div class="card"><h3>Total Requests</h3><div class="value" id="total">-</div></div>
+<div class="card"><h3>Successful Requests</h3><div class="value" id="success">-</div></div>
+<div class="card"><h3>Failed Requests</h3><div class="value" id="failed">-</div></div>
+<div class="card"><h3>Error Rate</h3><div class="value" id="error">-</div></div>
+<div class="card"><h3>Average Latency</h3><div class="value" id="latency">-</div></div>
+</div>
+
+<div class="section"><h2>System Status</h2><p id="status" class="loading">Loading...</p></div>
+
+<div class="section">
+<h2>☸️ Kubernetes & Autoscaling</h2>
+<div class="grid">
+<div class="box"><h4>Desired Replicas</h4><div id="desiredReplicas" class="box-value">-</div></div>
+<div class="box"><h4>Ready Replicas</h4><div id="readyReplicas" class="box-value">-</div></div>
+<div class="box"><h4>Service Endpoints</h4><div id="serviceEndpoints" class="box-value">-</div></div>
+<div class="box"><h4>HPA Current CPU</h4><div id="currentCpu" class="box-value">-</div></div>
+<div class="box"><h4>HPA Target CPU</h4><div id="targetCpu" class="box-value">-</div></div>
+<div class="box"><h4>HPA Range</h4><div id="hpaRange" class="box-value">-</div></div>
+</div>
+<p id="kubernetesStatus" class="loading">Loading Kubernetes status...</p>
+<h3>API Pods</h3>
+<table id="podsTable"><thead><tr><th>Pod</th><th>Status</th><th>Ready</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="section">
+<h2>🚦 Traffic Generator</h2>
+<div class="controls">
+<div class="control"><label>Endpoint</label><select id="endpoint"><option>/health</option><option>/instance</option><option>/slow</option><option>/error</option><option>/cpu-load</option></select></div>
+<div class="control"><label>Requests/sec: <span id="rateValue">10</span></label><input id="rate" type="range" min="1" max="50" value="10"></div>
+<button id="startBtn">Start Traffic</button><button id="stopBtn">Stop Traffic</button>
+</div>
+<div id="trafficStatus">Traffic stopped</div>
+</div>
+
+<div class="section">
+<h2>⚖️ Kubernetes Load Balancing</h2>
+<p>Requests to <code>/instance</code> are routed by the Kubernetes Service. Counts below are real requests recorded by each API pod during the last 5 minutes.</p>
+<p id="lbStatus" class="loading">Loading...</p>
+<table id="lbTable"><thead><tr><th>Pod</th><th>Status</th><th>Requests (5 min)</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="section">
+<h2>🤖 ML Anomaly Detection</h2>
+<div id="anomalyStatus" class="anomaly-status loading">Analyzing application behavior...</div>
+<div class="anomaly-summary">
+<div class="box"><h4>Anomalies Detected</h4><div id="anomalyCount" class="box-value">-</div></div>
+<div class="box"><h4>Windows Analyzed</h4><div id="windowsAnalyzed" class="box-value">-</div></div>
+<div class="box"><h4>ML Status</h4><div id="mlStatus" class="box-value">-</div></div>
+</div>
+<table id="anomalyTable"><thead><tr><th>Time</th><th>Requests / Min</th><th>Avg Latency</th><th>Error Rate</th><th>Anomaly Score</th><th>Status</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="section"><h2>Recent Requests</h2>
+<table id="requestsTable"><thead><tr><th>Time</th><th>Endpoint</th><th>Status</th><th>Latency</th></tr></thead><tbody></tbody></table>
+</div>
+
+<script>
+const API="http://3.80.101.201:30001";
+let trafficTimer=null, sent=0, trafficRunning=false;
+
+async function loadMetrics(){
+ try{
+  const r=await fetch(API+"/metrics"),d=await r.json();
+  total.innerText=d.total_requests;success.innerText=d.successful_requests;failed.innerText=d.failed_requests;
+  error.innerText=d.error_rate_percent+"%";latency.innerText=d.average_latency_seconds+" s";
+  status.innerText=d.error_rate_percent>5?"⚠️ System experiencing errors":"✅ System healthy";
+  status.className=d.error_rate_percent>5?"error":"success";
+  const tb=document.querySelector("#requestsTable tbody");tb.innerHTML="";
+  d.recent_requests.forEach(x=>{tb.innerHTML+=`<tr><td>${new Date(x.timestamp).toLocaleTimeString()}</td><td>${x.endpoint}</td><td class="${x.status_code>=400?"error":"success"}">${x.status_code}</td><td>${x.latency} s</td></tr>`});
+ }catch(e){status.innerText="❌ Unable to connect to PulseWatch";status.className="error"}
+}
+
+async function loadKubernetes(){
+ try{
+  const r=await fetch(API+"/kubernetes"),d=await r.json();if(d.status!=="connected")throw Error(d.message);
+  desiredReplicas.innerText=d.deployment.desired_replicas;readyReplicas.innerText=d.deployment.ready_replicas;serviceEndpoints.innerText=d.service.endpoints;
+  currentCpu.innerText=d.hpa.current_cpu_percent==null?"-":d.hpa.current_cpu_percent+"%";
+  targetCpu.innerText=d.hpa.target_cpu_percent==null?"-":d.hpa.target_cpu_percent+"%";
+  hpaRange.innerText=(d.hpa.min_replicas??"-")+" - "+(d.hpa.max_replicas??"-");
+  kubernetesStatus.innerText=`✅ Connected | Service: ${d.service.name} | NodePort: ${d.service.node_port}`;
+  kubernetesStatus.className="success";
+  const tb=document.querySelector("#podsTable tbody");tb.innerHTML="";
+  d.pods.forEach(p=>tb.innerHTML+=`<tr><td>${p.name}</td><td>${p.status}</td><td class="${p.ready?"success":"error"}">${p.ready?"READY":"NOT READY"}</td></tr>`);
+ }catch(e){kubernetesStatus.innerText="❌ Unable to load Kubernetes status";kubernetesStatus.className="error"}
+}
+
+async function loadPodStats(){
+ try{
+  const r=await fetch(API+"/pod-stats"),d=await r.json();if(d.status!=="connected")throw Error(d.message);
+  lbStatus.innerText=`Live window: last ${d.window_minutes} minutes | Total /instance requests: ${d.total_instance_requests}`;
+  lbStatus.className="success";
+  const tb=document.querySelector("#lbTable tbody");tb.innerHTML="";
+  d.pods.forEach(p=>tb.innerHTML+=`<tr><td>${p.name}</td><td>${p.status}</td><td>${p.requests}</td></tr>`);
+ }catch(e){lbStatus.innerText="❌ Unable to load pod request statistics";lbStatus.className="error"}
+}
+
+async function loadAnomalies(){
+ try{
+  const r=await fetch(API+"/anomalies"),d=await r.json();
+  anomalyCount.innerText=d.anomalies_detected;windowsAnalyzed.innerText=d.windows_analyzed;mlStatus.innerText=d.status;
+  anomalyStatus.innerText=d.status==="ANOMALY"?"🚨 Anomaly detected in application behavior":d.status==="NORMAL"?"✅ No abnormal behavior detected":"⚠️ Not enough data for ML detection";
+  anomalyStatus.className="anomaly-status "+(d.status==="ANOMALY"?"error":d.status==="NORMAL"?"success":"loading");
+  const tb=document.querySelector("#anomalyTable tbody");tb.innerHTML="";
+  d.results.forEach(x=>tb.innerHTML+=`<tr><td>${new Date(x.minute).toLocaleTimeString()}</td><td>${x.requests_per_minute}</td><td>${x.avg_latency} s</td><td>${(x.error_rate*100).toFixed(2)}%</td><td>${x.anomaly_score}</td><td class="${x.status==="ANOMALY"?"error":"success"}">${x.status}</td></tr>`);
+ }catch(e){anomalyStatus.innerText="❌ Unable to load ML anomaly detection";anomalyStatus.className="anomaly-status error"}
+}
+
+rate.oninput=()=>rateValue.innerText=rate.value;
+async function sendOne(){
+ const ep=endpoint.value;
+ try{await fetch(API+ep,{cache:"no-store"});sent++;trafficStatus.innerText=`Traffic running: ${ep} | ${sent} requests sent`;}catch(e){trafficStatus.innerText="Traffic error: "+e.message}
+}
+startBtn.onclick=()=>{
+ if(trafficRunning)return;trafficRunning=true;sent=0;const interval=1000/Number(rate.value);
+ trafficTimer=setInterval(sendOne,interval);sendOne();trafficStatus.innerText=`Traffic running: ${endpoint.value} → 200`;
+};
+stopBtn.onclick=()=>{clearInterval(trafficTimer);trafficTimer=null;trafficRunning=false;trafficStatus.innerText="Traffic stopped";};
+
+loadMetrics();loadKubernetes();loadPodStats();loadAnomalies();
+setInterval(loadMetrics,5000);setInterval(loadKubernetes,5000);setInterval(loadPodStats,2000);setInterval(loadAnomalies,5000);
+</script>
 </body>
-
 </html>
