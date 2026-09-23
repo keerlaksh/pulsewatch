@@ -40,7 +40,6 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "pulsewatch")
 
 
 def get_connection():
-
     return psycopg2.connect(
         host=DB_HOST,
         port=DB_PORT,
@@ -60,7 +59,6 @@ async def monitor_requests(request: Request, call_next):
     start_time = time.time()
 
     try:
-
         response = await call_next(request)
 
     except Exception:
@@ -203,6 +201,24 @@ def slow():
     return {
         "message": "This request was intentionally slow",
         "delay_seconds": 3
+    }
+
+
+# ============================================================
+# CPU LOAD TEST
+# ============================================================
+
+@app.get("/cpu-load")
+def cpu_load():
+
+    total = 0
+
+    for i in range(8_000_000):
+        total += i * i
+
+    return {
+        "status": "completed",
+        "result": total
     }
 
 
