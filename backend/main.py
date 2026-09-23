@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 
 import os
 import psycopg2
@@ -170,15 +170,14 @@ async def monitor_requests(
 
 
 # ==================================================
-# HOME
+# HOME / DASHBOARD
 # ==================================================
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def home():
 
-    return {
-        "message": "PulseWatch is running!"
-    }
+    with open("index.html", "r", encoding="utf-8") as file:
+        return file.read()
 
 
 # ==================================================
