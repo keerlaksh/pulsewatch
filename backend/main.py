@@ -3,18 +3,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 
 import os
+import socket
 import psycopg2
 import time
 
 from anomaly_detector import detect_latest_anomalies
 
+from kubernetes import client, config
+
 
 app = FastAPI()
 
 
-# ==================================================
+# ============================================================
 # CORS
-# ==================================================
+# ============================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,9 +28,9 @@ app.add_middleware(
 )
 
 
-# ==================================================
+# ============================================================
 # DATABASE CONFIGURATION
-# ==================================================
+# ============================================================
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
@@ -35,10 +38,6 @@ DB_NAME = os.getenv("DB_NAME", "pulsewatch")
 DB_USER = os.getenv("DB_USER", "pulsewatch")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "pulsewatch")
 
-
-# ==================================================
-# DATABASE CONNECTION
-# ==================================================
 
 def get_connection():
 
@@ -51,21 +50,14 @@ def get_connection():
     )
 
 
-# ==================================================
-# REQUEST MONITORING
-# ==================================================
+# ============================================================
+# REQUEST MONITORING MIDDLEWARE
+# ============================================================
 
 @app.middleware("http")
-async def monitor_requests(
-    request: Request,
-    call_next
-):
+async def monitor_requests(request: Request, call_next):
 
     start_time = time.time()
-
-    # ----------------------------------------------
-    # Process request
-    # ----------------------------------------------
 
     try:
 
@@ -75,17 +67,15 @@ async def monitor_requests(
 
         latency = time.time() - start_time
 
-        # ------------------------------------------
-        # Do not record internal monitoring endpoints
-        # ------------------------------------------
-
+        # Do not count dashboard page or dashboard polling
         if request.url.path not in [
+            "/",
             "/metrics",
-            "/anomalies"
+            "/anomalies",
+            "/kubernetes"
         ]:
 
             connection = get_connection()
-
             cursor = connection.cursor()
 
             cursor.execute(
@@ -106,29 +96,22 @@ async def monitor_requests(
             )
 
             connection.commit()
-
             cursor.close()
             connection.close()
 
         raise
 
-    # ----------------------------------------------
-    # Calculate latency
-    # ----------------------------------------------
-
     latency = time.time() - start_time
 
-    # ----------------------------------------------
-    # Save request metrics
-    # ----------------------------------------------
-
+    # Do not count dashboard page or dashboard polling
     if request.url.path not in [
+        "/",
         "/metrics",
-        "/anomalies"
+        "/anomalies",
+        "/kubernetes"
     ]:
 
         connection = get_connection()
-
         cursor = connection.cursor()
 
         cursor.execute(
@@ -149,13 +132,8 @@ async def monitor_requests(
         )
 
         connection.commit()
-
         cursor.close()
         connection.close()
-
-    # ----------------------------------------------
-    # Print request information
-    # ----------------------------------------------
 
     print(
         f"{request.method} "
@@ -169,20 +147,25 @@ async def monitor_requests(
     return response
 
 
-# ==================================================
-# HOME / DASHBOARD
-# ==================================================
+# ============================================================
+# DASHBOARD
+# ============================================================
 
 @app.get("/", response_class=HTMLResponse)
 def home():
 
-    with open("index.html", "r", encoding="utf-8") as file:
+    with open(
+        "index.html",
+        "r",
+        encoding="utf-8"
+    ) as file:
+
         return file.read()
 
 
-# ==================================================
-# HEALTH
-# ==================================================
+# ============================================================
+# HEALTH CHECK
+# ============================================================
 
 @app.get("/health")
 def health():
@@ -193,9 +176,24 @@ def health():
     }
 
 
-# ==================================================
-# SLOW TEST ENDPOINT
-# ==================================================
+# ============================================================
+# POD / INSTANCE IDENTIFICATION
+# ============================================================
+
+@app.get("/instance")
+def instance():
+
+    return {
+        "instance": os.getenv(
+            "HOSTNAME",
+            socket.gethostname()
+        )
+    }
+
+
+# ============================================================
+# INTENTIONALLY SLOW REQUEST
+# ============================================================
 
 @app.get("/slow")
 def slow():
@@ -208,9 +206,9 @@ def slow():
     }
 
 
-# ==================================================
-# ERROR TEST ENDPOINT
-# ==================================================
+# ============================================================
+# INTENTIONALLY FAILED REQUEST
+# ============================================================
 
 @app.get("/error")
 def error():
@@ -223,38 +221,173 @@ def error():
     )
 
 
-# ==================================================
-# METRICS
-# ==================================================
+# ============================================================
+# KUBERNETES CLUSTER STATUS
+# ============================================================
+
+@app.get("/kubernetes")
+def kubernetes_status():
+
+    try:
+
+        # ----------------------------------------------------
+        # Load Kubernetes configuration from inside the pod
+        # ----------------------------------------------------
+
+        config.load_incluster_config()
+
+        apps_api = client.AppsV1Api()
+        core_api = client.CoreV1Api()
+
+        # ----------------------------------------------------
+        # Get PulseWatch deployment
+        # ----------------------------------------------------
+
+        deployment = apps_api.read_namespaced_deployment(
+            name="pulsewatch-api",
+            namespace="default"
+        )
+
+        # ----------------------------------------------------
+        # Get PulseWatch API pods
+        # ----------------------------------------------------
+
+        pods = core_api.list_namespaced_pod(
+            namespace="default",
+            label_selector="app=pulsewatch-api"
+        )
+
+        pod_data = []
+
+        for pod in pods.items:
+
+            ready = False
+
+            if pod.status.container_statuses:
+
+                ready = all(
+                    container.ready
+                    for container in pod.status.container_statuses
+                )
+
+            pod_data.append(
+                {
+                    "name": pod.metadata.name,
+                    "status": pod.status.phase,
+                    "ready": ready
+                }
+            )
+
+        # ----------------------------------------------------
+        # Get Service endpoints
+        # ----------------------------------------------------
+
+        service = core_api.read_namespaced_service(
+            name="pulsewatch-api",
+            namespace="default"
+        )
+
+        endpoints = core_api.list_namespaced_endpoints(
+            namespace="default"
+        )
+
+        endpoint_count = 0
+
+        for endpoint in endpoints.items:
+
+            if endpoint.metadata.name == "pulsewatch-api":
+
+                if endpoint.subsets:
+
+                    for subset in endpoint.subsets:
+
+                        if subset.addresses:
+
+                            endpoint_count += len(
+                                subset.addresses
+                            )
+
+        # ----------------------------------------------------
+        # Return Kubernetes information
+        # ----------------------------------------------------
+
+        return {
+
+            "status": "connected",
+
+            "deployment": {
+
+                "name": deployment.metadata.name,
+
+                "desired_replicas":
+                    deployment.spec.replicas or 0,
+
+                "ready_replicas":
+                    deployment.status.ready_replicas or 0,
+
+                "available_replicas":
+                    deployment.status.available_replicas or 0
+            },
+
+            "service": {
+
+                "name": service.metadata.name,
+
+                "type":
+                    service.spec.type,
+
+                "port":
+                    service.spec.ports[0].port
+                    if service.spec.ports
+                    else None,
+
+                "node_port":
+                    service.spec.ports[0].node_port
+                    if service.spec.ports
+                    else None,
+
+                "endpoints":
+                    endpoint_count
+            },
+
+            "pods": pod_data
+        }
+
+    except Exception as error:
+
+        return {
+
+            "status": "unavailable",
+
+            "message": str(error)
+        }
+
+
+# ============================================================
+# APPLICATION METRICS
+# ============================================================
 
 @app.get("/metrics")
 def metrics():
 
     connection = get_connection()
-
     cursor = connection.cursor()
 
-    # ----------------------------------------------
+    # --------------------------------------------------------
     # Overall metrics
-    # ----------------------------------------------
+    # --------------------------------------------------------
 
     cursor.execute(
         """
         SELECT
             COUNT(*),
-
-            COUNT(*)
-            FILTER (
+            COUNT(*) FILTER (
                 WHERE status_code < 400
             ),
-
-            COUNT(*)
-            FILTER (
+            COUNT(*) FILTER (
                 WHERE status_code >= 400
             ),
-
             AVG(latency)
-
         FROM request_metrics
         """
     )
@@ -262,31 +395,29 @@ def metrics():
     result = cursor.fetchone()
 
     total_requests = result[0]
-
     successful_requests = result[1]
-
     failed_requests = result[2]
 
     average_latency = result[3] or 0
 
-    # ----------------------------------------------
+    # --------------------------------------------------------
     # Error rate
-    # ----------------------------------------------
+    # --------------------------------------------------------
 
     if total_requests > 0:
 
         error_rate = (
-            failed_requests
-            / total_requests
+            failed_requests /
+            total_requests
         ) * 100
 
     else:
 
         error_rate = 0
 
-    # ----------------------------------------------
+    # --------------------------------------------------------
     # Recent requests
-    # ----------------------------------------------
+    # --------------------------------------------------------
 
     cursor.execute(
         """
@@ -295,11 +426,8 @@ def metrics():
             endpoint,
             status_code,
             latency
-
         FROM request_metrics
-
         ORDER BY timestamp DESC
-
         LIMIT 10
         """
     )
@@ -315,42 +443,47 @@ def metrics():
                 "timestamp": row[0].isoformat(),
                 "endpoint": row[1],
                 "status_code": row[2],
-                "latency": round(row[3], 4)
+                "latency": round(
+                    row[3],
+                    4
+                )
             }
         )
 
     cursor.close()
-
     connection.close()
 
-    # ----------------------------------------------
-    # Return metrics
-    # ----------------------------------------------
-
     return {
-        "total_requests": total_requests,
 
-        "successful_requests": successful_requests,
+        "total_requests":
+            total_requests,
 
-        "failed_requests": failed_requests,
+        "successful_requests":
+            successful_requests,
 
-        "average_latency_seconds": round(
-            average_latency,
-            4
-        ),
+        "failed_requests":
+            failed_requests,
 
-        "error_rate_percent": round(
-            error_rate,
-            2
-        ),
+        "average_latency_seconds":
+            round(
+                average_latency,
+                4
+            ),
 
-        "recent_requests": recent_requests
+        "error_rate_percent":
+            round(
+                error_rate,
+                2
+            ),
+
+        "recent_requests":
+            recent_requests
     }
 
 
-# ==================================================
+# ============================================================
 # ML ANOMALY DETECTION
-# ==================================================
+# ============================================================
 
 @app.get("/anomalies")
 def anomalies():
