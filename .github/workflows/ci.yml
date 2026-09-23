@@ -16,6 +16,34 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    services:
+
+      postgres:
+        image: postgres:16
+
+        env:
+          POSTGRES_USER: pulsewatch
+          POSTGRES_PASSWORD: pulsewatch
+          POSTGRES_DB: pulsewatch
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd "pg_isready -U pulsewatch -d pulsewatch"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: pulsewatch
+      DB_USER: pulsewatch
+      DB_PASSWORD: pulsewatch
+
+
     steps:
 
       - name: Checkout repository
@@ -33,6 +61,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+
+      - name: Initialize database
+        run: |
+          PGPASSWORD=pulsewatch psql \
+            -h localhost \
+            -U pulsewatch \
+            -d pulsewatch \
+            -c "
+            CREATE TABLE IF NOT EXISTS request_metrics (
+                id SERIAL PRIMARY KEY,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                endpoint VARCHAR(255),
+                status_code INTEGER,
+                latency DOUBLE PRECISION
+            );
+            "
 
 
       - name: Run tests
