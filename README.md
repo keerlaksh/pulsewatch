@@ -430,4 +430,6 @@ The data is **not baked into the PulseWatch image**. It is inserted into Postgre
                            ▼
                      Anomaly result
 ```
+<img width="1312" height="1199" alt="ChatGPT Image Sep 24, 2026, 05_12_33 PM" src="https://github.com/user-attachments/assets/cca15148-7bd8-43a1-9c39-d2c19df20226" />
+
 
